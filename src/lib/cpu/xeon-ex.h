@@ -17,12 +17,16 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #include "sandybridge-papi.h"
 #include "ivybridge-papi.h"
 #include "haswell-papi.h"
+#include "sapphirerapids-papi.h" // Include SPR PAPI header
 #else
 #include "sandybridge.h"
 #include "ivybridge.h"
 #include "haswell.h"
+#include "sapphirerapids.h" // Include SPR non-PAPI header
 #endif
 
+// NOTE: Verify if these functions are compatible with Sapphire Rapids.
+//       If not, create specific functions like intel_xeon_spr_set/get_throttle_register.
 int intel_xeon_ex_set_throttle_register(pci_regs_t *regs, throttle_type_t throttle_type, uint16_t val)
 {
     int offset;
@@ -107,6 +111,21 @@ cpu_model_t cpu_model_intel_xeon_ex_v3 = {
 #else
     .pmc_events = PMC_EVENTS_PTR(haswell),
 #endif
+    .set_throttle_register = intel_xeon_ex_set_throttle_register,
+    .get_throttle_register = intel_xeon_ex_get_throttle_register
+};
+
+// Add Sapphire Rapids CPU model definition
+cpu_model_t cpu_model_intel_xeon_spr = {
+    .microarch = SapphireRapidsXeon,
+#ifdef PAPI_SUPPORT
+    // NOTE: Use the correct Sapphire Rapids PAPI event functions
+    .pmc_events = {sapphirerapids_native_events, sapphirerapids_read_stall_events_local, sapphirerapids_read_stall_events_remote},
+#else
+    // NOTE: Use the correct Sapphire Rapids non-PAPI event structure
+    .pmc_events = PMC_EVENTS_PTR(sapphirerapids),
+#endif
+    // NOTE: Verify or replace these functions for Sapphire Rapids
     .set_throttle_register = intel_xeon_ex_set_throttle_register,
     .get_throttle_register = intel_xeon_ex_get_throttle_register
 };

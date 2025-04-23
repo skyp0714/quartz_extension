@@ -193,7 +193,7 @@ cpu_model_t *cpu_model()
 
     get_family_model(&family, &model);
 
-    int isXeon = is_Xeon();
+    int isXeon = is_Xeon(); // Assuming Sapphire Rapids will identify as Xeon
 
     for (i = 0; known_cpus[i].microarch != Invalid; i++)
     {
@@ -204,28 +204,58 @@ cpu_model_t *cpu_model()
             switch (c.microarch)
             {
             case SandyBridge:
+            case SandyBridgeXeon: // Group Xeon/non-Xeon if they share base model
                 cpu_model = &cpu_model_intel_xeon_ex;
+                // Adjust microarch based on isXeon only if non-Xeon variant exists
+                if (!isXeon && cpu_model->microarch == SandyBridgeXeon)
+                     cpu_model->microarch = SandyBridge;
                 break;
             case IvyBridge:
+            case IvyBridgeXeon:
                 cpu_model = &cpu_model_intel_xeon_ex_v2;
+                if (!isXeon && cpu_model->microarch == IvyBridgeXeon)
+                     cpu_model->microarch = IvyBridge;
                 break;
             case Haswell:
+            case HaswellXeon:
                 cpu_model = &cpu_model_intel_xeon_ex_v3;
+                 if (!isXeon && cpu_model->microarch == HaswellXeon)
+                     cpu_model->microarch = Haswell;
                 break;
+            case SapphireRapidsXeon: // Add Sapphire Rapids case
+                 cpu_model = &cpu_model_intel_xeon_spr;
+                 // Assuming only Xeon variant for SPR for now
+                 if (!isXeon) {
+                     // Handle non-Xeon SPR if it exists and needs different settings
+                     // cpu_model->microarch = SapphireRapids; // If defined
+                     DBG_LOG(WARNING, "Non-Xeon Sapphire Rapids detected, using Xeon settings.\n");
+                 }
+                 break;
             default:
+                // Should not happen if known_cpus is correct
                 return NULL;
             }
 
-            if (!isXeon)
-                cpu_model->microarch = (microarch_t)(cpu_model->microarch - 1);
+            // This logic might need refinement if Xeon/non-Xeon have different pmc_events
+            // The current xeon-ex.h defines models based on Xeon initially.
+            // We adjust the microarch enum value here if it's not a Xeon.
+            // if (!isXeon) {
+            //     // Check if a non-Xeon enum value exists (e.g., SandyBridge vs SandyBridgeXeon)
+            //     if (cpu_model->microarch % 2 != 0) { // Simple check assuming Xeon is odd, non-Xeon is even
+            //          cpu_model->microarch = (microarch_t)(cpu_model->microarch - 1);
+            //     }
+            // }
 
-            DBG_LOG(INFO, "Detected CPU model '%s'\n", microarch_strings[cpu_model->microarch]);
-            break;
+
+            DBG_LOG(INFO, "Detected CPU model '%s' (Family: 0x%X, Model: 0x%X)\n",
+                    microarch_strings[cpu_model->microarch], family, model);
+            break; // Found matching CPU
         }
     }
 
     if (!cpu_model)
     {
+         DBG_LOG(ERROR, "Unsupported CPU detected (Family: 0x%X, Model: 0x%X)\n", family, model);
         return NULL;
     }
 

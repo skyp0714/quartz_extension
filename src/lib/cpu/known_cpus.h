@@ -37,6 +37,9 @@ microarch_ID_t known_cpus[] =
         {.family = 0x06, .model = 0x45, .microarch = Haswell},
         {.family = 0x06, .model = 0x46, .microarch = Haswell},
 
+        // Add Sapphire Rapids (Example Model ID, please verify)
+        {.family = 0x06, .model = 0x8F, .microarch = SapphireRapidsXeon},
+
         // must be the last element
         {.family = 0x0, .model = 0x0, .microarch = Invalid}};
 
@@ -49,6 +52,8 @@ char *microarch_strings[] =
         "Ivy Bridge",
         "Ivy Bridge Xeon",
         "Haswell",
-        "Haswell Xeon"};
+        "Haswell Xeon",
+        "Sapphire Rapids Xeon" // Add Sapphire Rapids string
+    };
 
 #endif /* __KNOWN_CPUS_H */
