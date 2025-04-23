@@ -40,7 +40,7 @@ cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >> $dir_name_res/foo-r
 cp nvmemul-orig.ini nvmemul.ini
 ../build/bench/memlat/memlat 1 1 1 1000000 64 8 0 1 >foo
 
-for conf in local remote
+for conf in remote
 do
     if [ $conf = local ]; then confpar=0 
     else confpar=1

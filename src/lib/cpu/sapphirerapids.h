@@ -12,8 +12,8 @@
 #define FOREACH_PMC_HW_EVENT(ACTION)                                                                       \
   ACTION("CYCLE_ACTIVITY:STALLS_L2_MISS", NULL, 0x55305a3) /* Placeholder */                       \
   ACTION("MEM_LOAD_L3_HIT_RETIRED:XSNP_NONE", NULL, 0x5308d2)          /* Placeholder */                       \
-  ACTION("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", NULL, 0x530cd3)     /* Placeholder */                       \
-  ACTION("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", NULL, 0x5303d3)      /* Placeholder */
+  ACTION("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", NULL, 0x5302d3)     /* Placeholder */                       \
+  ACTION("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", NULL, 0x5301d3)      /* Placeholder */
 
 #undef FOREACH_PMC_EVENT
 #define FOREACH_PMC_EVENT(ACTION, prefix)                                                                  \
