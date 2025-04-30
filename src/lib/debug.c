@@ -46,6 +46,7 @@ void
 dbg_set_level(int level)
 {
 	dbg_level = level;
+	printf("Debug level set to %d\n", dbg_level);
 }
 
 
@@ -59,6 +60,7 @@ dbg_init(config_t* dbg_cfg, int level, const char* identifier)
 	} else {
 		dbg_level = level;
 	}
+	printf("Debug level set to %d\n", dbg_level);
 
 	__cconfig_lookup_int(dbg_cfg, "debug.verbose", &dbg_verbose);
 

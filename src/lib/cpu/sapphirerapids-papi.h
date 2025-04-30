@@ -28,7 +28,7 @@ uint64_t sapphirerapids_read_stall_events_local() {
 		uint64_t remote_dram = values[2];// Placeholder index
 		uint64_t local_dram  = values[3]; // Placeholder index
 
-		DBG_LOG(DEBUG, "SPR read stall L2 cycles %lu; llc_hit %lu; remote_dram %lu; local_dram %lu\n",
+		DBG_LOG(DEBUG, "[PAPI]SPR read stall L2 cycles %lu; llc_hit %lu; remote_dram %lu; local_dram %lu\n",
 			l2_pending, llc_hit, remote_dram, local_dram);
 
         // Placeholder calculation logic (similar to Haswell/Ivy Bridge)
@@ -55,7 +55,7 @@ uint64_t sapphirerapids_read_stall_events_remote() {
 		uint64_t remote_dram = values[2];// Placeholder index
 		uint64_t local_dram  = values[3]; // Placeholder index
 
-		DBG_LOG(DEBUG, "SPR read stall L2 cycles %lu; llc_hit %lu; remote_dram %lu; local_dram %lu\n",
+		DBG_LOG(DEBUG, "[PAPI]SPR read stall L2 cycles %lu; llc_hit %lu; remote_dram %lu; local_dram %lu\n",
 			l2_pending, llc_hit, remote_dram, local_dram);
 
 		// Placeholder calculation logic (similar to Haswell/Ivy Bridge)

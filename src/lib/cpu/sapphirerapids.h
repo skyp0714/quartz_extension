@@ -21,7 +21,8 @@
   ACTION(remote_dram, prefix)
 
 // NOTE: This factor might need adjustment for Sapphire Rapids.
-#define SPR_L3_FACTOR 7.0
+#define SPR_L3_FACTOR_LOCAL 5
+#define SPR_L3_FACTOR_REMOTE 8
 
 extern __thread int tls_hw_local_latency;
 extern __thread int tls_hw_remote_latency;
@@ -62,10 +63,15 @@ DECLARE_READ_PMC(sapphirerapids, ldm_stall_cycles)
 #endif
 
    // calculate stalls based on L2 stalls and LLC miss/hit (Placeholder logic)
-   double num = SPR_L3_FACTOR * (remote_dram_diff + local_dram_diff);
+   double num = (SPR_L3_FACTOR_REMOTE * remote_dram_diff) + (SPR_L3_FACTOR_LOCAL * local_dram_diff);
    double den = num + llc_hit_diff;
    if (den == 0) return 0;
-   return (uint64_t) ((double)l2_pending_diff * (num / den));
+   double stalls = (double)l2_pending_diff * (num / den);
+
+   // calculate remote dram stalls based on total stalls and local/remote dram accesses (Placeholder logic)
+   den = (remote_dram_diff * tls_hw_remote_latency) + (local_dram_diff * tls_hw_local_latency);
+   if (den == 0) return 0;
+   return (uint64_t) (stalls * ((double)(remote_dram_diff * tls_hw_remote_latency) / den));
 }
 
 
@@ -101,7 +107,7 @@ DECLARE_READ_PMC(sapphirerapids, remote_dram)
 #endif
 
    // calculate stalls based on L2 stalls and LLC miss/hit (Placeholder logic)
-   double num = SPR_L3_FACTOR * (remote_dram_diff + local_dram_diff);
+   double num = (SPR_L3_FACTOR_REMOTE * remote_dram_diff) + (SPR_L3_FACTOR_LOCAL * local_dram_diff);
    double den = num + llc_hit_diff;
    if (den == 0) return 0;
    double stalls = (double)l2_pending_diff * (num / den);
