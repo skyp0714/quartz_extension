@@ -47,7 +47,7 @@ do
     fi
     for numchains in 1 
     do
-	for epoch in 1000 
+	for epoch in 500 
 	do 
 	    echo "#FORMAT #1_emul_lat(ns) #2_min_meas_lat(ns)  #3_aver_meas_lat(ns)  #4_max_meas_lat(ns)  #5_aver_error(%) #6_max_error(%)" >  $dir_name_sum/summary-nvm-lat-accuracy-$conf-epoch-$epoch-numchains-$numchains.txt
 

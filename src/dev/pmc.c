@@ -32,14 +32,27 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #include "ioctl_query.h"
 
 static long pmc_ioctl(struct file *f, unsigned int cmd, unsigned long arg);
-//unsigned long read_cr4(void);
-//void write_cr4(unsigned long);
-#ifndef read_cr4
-#define read_cr4 native_read_cr4
-#endif
-#ifndef write_cr4
-#define write_cr4 native_write_cr4
-#endif
+
+// 추가된 함수 프로토타입
+void pmc_set_pce_bit(void* arg);
+int pmc_init_module(void);
+void pmc_exit_module(void);
+void pmc_clear_all_cpu(int counter_id);
+void set_counter(void* arg);
+void set_counter_all_cpu(int counter_id, unsigned long arg);
+
+// CR4 레지스터 접근을 위한 인라인 함수 정의
+static inline unsigned long read_cr4(void)
+{
+    unsigned long cr4_val;
+    asm volatile("mov %%cr4, %0" : "=r"(cr4_val) : : "memory");
+    return cr4_val;
+}
+
+static inline void write_cr4(unsigned long cr4_val)
+{
+    asm volatile("mov %0, %%cr4" : : "r"(cr4_val) : "memory");
+}
 
 struct file_operations pmc_fops = {
 	.unlocked_ioctl = pmc_ioctl,
@@ -49,8 +62,8 @@ struct file_operations pmc_fops = {
 static const char* module_name = "nvmemul";
 static int mod_major = 0;
 static const int NVMEMUL_MAJOR = 0;
-const const int PERFCTR0 = 0xc1;
-const const int PERFEVENTSEL0 = 0x186;
+static const int PERFCTR0 = 0xc1;
+static const int PERFEVENTSEL0 = 0x186;
 
 
 void pmc_set_pce_bit(void* arg) 
