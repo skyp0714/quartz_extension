@@ -19,6 +19,7 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #include "topology.h"
 #include "model.h"
 #include "monotonic_timer.h"
+#include <limits.h> // For UINT64_MAX
 
 /**
  * \file
@@ -230,12 +231,29 @@ void create_latency_epoch()
     }
 #endif
 
-    delay_cycles = stall_cycles * ((double)(target_latency - hw_latency) / ((double) hw_latency));
+    // Calculate delay_cycles with overflow protection
+    double ratio = 0.0;
+    // Ensure hw_latency is positive and target_latency is greater than hw_latency for a positive delay
+    if (hw_latency > 0 && target_latency > hw_latency) {
+        ratio = ((double)(target_latency - hw_latency) / (double)hw_latency);
+    }
+
+    if (ratio > 0.0 && stall_cycles > 0) {
+        // Check for potential overflow before multiplication: stall_cycles * ratio
+        if (ratio > 0.0 && stall_cycles > (double)UINT64_MAX / ratio) {
+            delay_cycles = UINT64_MAX; // Cap at max if overflow detected
+            DBG_LOG(WARNING, "Potential overflow in delay calculation (stall_cycles * ratio), capping delay_cycles for thread %d\n", thread->tid);
+        } else {
+            delay_cycles = (uint64_t)(stall_cycles * ratio);
+        }
+    } else {
+        delay_cycles = 0; // No delay if ratio is not positive or no stalls
+    }
 
     stop = hrtime_cycles();
     tls_overhead += stop - start;
 
-    DBG_LOG(DEBUG, "overhead cycles: %lu; immediate overhead %lu; stall cycles: %lu; delay cycles: %lu\n", tls_overhead, stop - start, stall_cycles, delay_cycles);
+    DBG_LOG(DEBUG, "overhead cycles: %lu; immediate overhead %lu; stall cycles: %lu; calculated delay_cycles before overhead: %lu\n", tls_overhead, stop - start, stall_cycles, delay_cycles);
 
     if (delay_cycles > tls_overhead) {
     	delay_cycles -= tls_overhead;
@@ -253,14 +271,39 @@ void create_latency_epoch()
 #ifdef USE_STATISTICS
     if (thread->thread_manager->stats.enabled) {
         thread->stats.stall_cycles += stall_cycles;
-        thread->stats.delay_cycles += delay_cycles;
+        thread->stats.delay_cycles += delay_cycles; // Store delay before capping for stats
         thread->stats.overhead_cycles = tls_overhead;
     }
 #endif
 
+    // Check if the final delay_cycles is too large and ignore if so
+    // MAX_INJECT_DELAY_NS를 min_epoch_duration_us (나노초로 변환)의 10배로 설정합니다.
+    uint64_t min_epoch_duration_ns = (uint64_t)thread->thread_manager->min_epoch_duration_us * 1000ULL;
+    const uint64_t MAX_INJECT_DELAY_NS = min_epoch_duration_ns * 5ULL;
+    uint64_t max_allowed_delay_cycles = 0;
+
+    if (thread->cpu_speed_mhz > 0) {
+        max_allowed_delay_cycles = ((uint64_t)thread->cpu_speed_mhz * MAX_INJECT_DELAY_NS) / 1000ULL;
+    } else {
+        // Fallback if cpu_speed_mhz is 0 or invalid. Use a fixed large cycle count (e.g., 1 sec @ 4GHz).
+        max_allowed_delay_cycles = 4000000000ULL; 
+        DBG_LOG(WARNING, "cpu_speed_mhz is 0 or invalid for thread %d, using default max_allowed_delay_cycles %lu.\n", thread->tid, max_allowed_delay_cycles);
+    }
+
+    if (delay_cycles > max_allowed_delay_cycles) {
+        DBG_LOG(WARNING, "Calculated delay_cycles %lu for thread %d exceeds max allowed %lu (10x min_epoch_duration_ns). Ignoring (setting to 0) excessive delay.\n",
+                delay_cycles, thread->tid, max_allowed_delay_cycles);
+        delay_cycles = 0; // Ignore if the final delay addition is too large
+    }
+    
+#ifdef USE_STATISTICS
+    // If stats are enabled, you might want to record the capped delay if different from the original delay_cycles
+    // For simplicity, current stats.delay_cycles holds pre-cap value. If capped value is needed for stats, update here.
+#endif
+
     epoch_end = monotonic_time_us();
 
-    DBG_LOG(DEBUG, "injecting delay of %lu cycles (%lu usec) - discounted overhead\n", delay_cycles,
+    DBG_LOG(DEBUG, "injecting delay of %lu cycles (%lu usec) - discounted overhead, after cap\n", delay_cycles,
                     cycles_to_us(thread->cpu_speed_mhz, delay_cycles));
     if (delay_cycles && latency_model.inject_delay) {
         create_delay_cycles(delay_cycles);

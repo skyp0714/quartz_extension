@@ -40,14 +40,14 @@ cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >> $dir_name_res/foo-r
 cp nvmemul-orig.ini nvmemul.ini
 ../build/bench/memlat/memlat 1 1 1 1000000 64 8 0 1 >foo
 
-for conf in local remote
+for conf in remote local
 do
     if [ $conf = local ]; then confpar=0 
     else confpar=1
     fi
     for numchains in 1 
     do
-	for epoch in 500 
+	for epoch in 10000 
 	do 
 	    echo "#FORMAT #1_emul_lat(ns) #2_min_meas_lat(ns)  #3_aver_meas_lat(ns)  #4_max_meas_lat(ns)  #5_aver_error(%) #6_max_error(%)" >  $dir_name_sum/summary-nvm-lat-accuracy-$conf-epoch-$epoch-numchains-$numchains.txt
 
@@ -64,7 +64,7 @@ do
 		mv foo-nvmemul-$lat-$epoch.ini  nvmemul.ini
 		echo "lat epoch chains" $lat $epoch $numchains >>   $dir_name_res/foo-runs
 		
-		for time in 1 2
+		for time in 1 2 3 4 5 6 7 8 9 10
 		do
 		    ../build/bench/memlat/memlat 1 1 $numchains 10000000 64 8 0 $confpar >> $dir_name_res/full_results-$conf-$lat-$epoch-$numchains.txt
  		done

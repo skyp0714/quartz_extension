@@ -1,2 +1,3 @@
 build/*
-benchmark-tests/*/
+benchmark-tests/*/*
+benchmark-tests/foo
